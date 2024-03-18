@@ -1,20 +1,19 @@
 package org.lrh.shortlink.admin.dto.resp;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.lrh.shortlink.admin.common.serialize.PhoneDesensitizationSerializer;
+import lombok.Data;
 
 /**
  * @ProjectName: shortlink
  * @Package: org.lrh.shortlink.admin.dto.resp
- * @ClassName: UserRespDTO
+ * @ClassName: UserActualRespDTO
  * @Author: 63283
  * @Description: 用户返回参数响应
- * @Date: 2024/3/18 14:46
+ * @Date: 2024/3/18 15:38
  */
-
-public class UserRespDTO {
+@Data
+public class UserActualRespDTO {
     /**
-     * ID
+     * id
      */
     private Long id;
 
@@ -31,7 +30,6 @@ public class UserRespDTO {
     /**
      * 手机号
      */
-    @JsonSerialize(using = PhoneDesensitizationSerializer.class)
     private String phone;
 
     /**
