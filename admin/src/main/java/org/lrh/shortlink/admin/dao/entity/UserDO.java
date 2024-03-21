@@ -2,8 +2,7 @@ package org.lrh.shortlink.admin.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.util.Date;
+import org.lrh.shortlink.admin.common.database.BaseDO;
 
 /**
  * @ProjectName: shortlink
@@ -15,7 +14,7 @@ import java.util.Date;
  */
 @Data
 @TableName("t_user")
-public class UserDO {
+public class UserDO extends BaseDO {
 
     /**
      * ID
@@ -52,18 +51,4 @@ public class UserDO {
      */
     private Long deletionTime;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 修改时间
-     */
-    private Date updateTime;
-
-    /**
-     * 删除标识 0：未删除 1：已删除
-     */
-    private Integer delFlag;
 }
