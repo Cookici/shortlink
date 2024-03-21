@@ -1,6 +1,7 @@
 package org.lrh.shortlink.admin.dto.resp;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Data;
 import org.lrh.shortlink.admin.common.serialize.PhoneDesensitizationSerializer;
 
 /**
@@ -11,7 +12,7 @@ import org.lrh.shortlink.admin.common.serialize.PhoneDesensitizationSerializer;
  * @Description: 用户返回参数响应
  * @Date: 2024/3/18 14:46
  */
-
+@Data
 public class UserRespDTO {
     /**
      * ID
