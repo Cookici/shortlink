@@ -6,7 +6,7 @@ import org.lrh.shortlink.projectcore.common.convention.errorcode.IErrorCode;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.convention.excepiton
+ * @Package: org.lrh.shortlink.projectcore.common.convention.excepiton
  * @ClassName: RemoteException
  * @Author: 63283
  * @Description: 远程服务调用异常

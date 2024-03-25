@@ -2,7 +2,7 @@ package org.lrh.shortlink.projectcore.common.convention.errorcode;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.enums
+ * @Package: org.lrh.shortlink.projectcore.common.enums
  * @ClassName: BaseErrorCode
  * @Author: 63283
  * @Description: 基础错误码定义

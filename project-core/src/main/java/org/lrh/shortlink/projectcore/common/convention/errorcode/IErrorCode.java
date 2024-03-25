@@ -2,7 +2,7 @@ package org.lrh.shortlink.projectcore.common.convention.errorcode;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.enums
+ * @Package: org.lrh.shortlink.projectcore.common.enums
  * @ClassName: IErrorCode
  * @Author: 63283
  * @Description: 平台错误码

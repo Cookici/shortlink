@@ -1,4 +1,4 @@
-package org.lrh.shortlink.projectcore.common.constant;
+package org.lrh.shortlink.projectcore.common.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
@@ -9,7 +9,7 @@ import java.util.Date;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.config
+ * @Package: org.lrh.shortlink.projectcore.common.config
  * @ClassName: MyMetaObjectHandler
  * @Author: 63283
  * @Description: MyBatis-Plus 原数据自动填充类

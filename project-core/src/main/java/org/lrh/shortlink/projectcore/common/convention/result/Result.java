@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.convention.result
+ * @Package: org.lrh.shortlink.projectcore.common.convention.result
  * @ClassName: Result
  * @Author: 63283
  * @Description: 全局返回对象

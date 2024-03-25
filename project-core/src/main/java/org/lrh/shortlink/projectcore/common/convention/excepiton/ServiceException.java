@@ -8,7 +8,7 @@ import java.util.Optional;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.convention.excepiton
+ * @Package: org.lrh.shortlink.projectcore.common.convention.excepiton
  * @ClassName: ServiceException
  * @Author: 63283
  * @Description: 服务端异常

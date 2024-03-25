@@ -6,7 +6,7 @@ import org.lrh.shortlink.projectcore.common.convention.errorcode.IErrorCode;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.admin.common.convention.excepiton
+ * @Package: org.lrh.shortlink.projectcore.common.convention.excepiton
  * @ClassName: ClientException
  * @Author: 63283
  * @Description: 客户端异常
