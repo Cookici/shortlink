@@ -1,15 +1,18 @@
-package org.lrh.shortlink.admin.remote.dto;
+package org.lrh.shortlink.admin.remote;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.lrh.shortlink.admin.common.convention.result.Result;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
+import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 /**
  * @ProjectName: shortlink
@@ -45,5 +48,13 @@ public interface ShortLinkActualRemoteService {
     @PostMapping("/api/short-link/v1/create")
     Result<ShortLinkCreateRespDTO> createShortLink(@RequestBody ShortLinkCreateReqDTO requestParam);
 
+    /**
+     * 查询分组短链接总量
+     *
+     * @param requestParam 分组短链接总量请求参数
+     * @return 查询分组短链接总量响应
+     */
+    @GetMapping("/api/short-link/v1/count")
+    Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(@RequestParam("requestParam") List<String> requestParam);
 
 }

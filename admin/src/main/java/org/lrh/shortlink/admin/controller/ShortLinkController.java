@@ -3,7 +3,7 @@ package org.lrh.shortlink.admin.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.lrh.shortlink.admin.common.convention.result.Result;
-import org.lrh.shortlink.admin.remote.dto.ShortLinkActualRemoteService;
+import org.lrh.shortlink.admin.remote.ShortLinkActualRemoteService;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkPageReqDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;

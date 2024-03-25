@@ -10,11 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lrh.shortlink.admin.common.biz.user.UserContext;
 import org.lrh.shortlink.admin.common.convention.excepiton.ClientException;
+import org.lrh.shortlink.admin.common.convention.result.Result;
 import org.lrh.shortlink.admin.dao.entity.GroupDO;
 import org.lrh.shortlink.admin.dao.mapper.GroupMapper;
 import org.lrh.shortlink.admin.dto.req.ShortLinkGroupSortReqDTO;
 import org.lrh.shortlink.admin.dto.req.ShortLinkGroupUpdateReqDTO;
 import org.lrh.shortlink.admin.dto.resp.ShortLinkGroupRespDTO;
+import org.lrh.shortlink.admin.remote.ShortLinkActualRemoteService;
+import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.admin.service.GroupService;
 import org.lrh.shortlink.admin.toolkit.RandomGenerator;
 import org.redisson.api.RLock;
@@ -23,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.lrh.shortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_CREATE_KEY;
@@ -43,6 +47,8 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
 
 
     private final RedissonClient redissonClient;
+
+    private final ShortLinkActualRemoteService shortLinkActualRemoteService;
 
     @Value("${short-link.group.max-num}")
     private Integer groupMaxNum;
@@ -87,7 +93,18 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
                 .eq(GroupDO::getUsername, UserContext.getUsername())
                 .orderByDesc(GroupDO::getSortOrder, GroupDO::getUpdateTime);
         List<GroupDO> groupDOList = baseMapper.selectList(queryWrapper);
-        return BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
+        Result<List<ShortLinkGroupCountQueryRespDTO>> listResult = shortLinkActualRemoteService.listGroupShortLinkCount(
+                groupDOList.stream()
+                        .map(GroupDO::getGid)
+                        .toList());
+        List<ShortLinkGroupRespDTO> shortLinkGroupRespDTOList = BeanUtil.copyToList(groupDOList, ShortLinkGroupRespDTO.class);
+        shortLinkGroupRespDTOList.forEach(each -> {
+            Optional<ShortLinkGroupCountQueryRespDTO> first = listResult.getData().stream()
+                    .filter(item -> Objects.equals(item.getGid(), each.getGid()))
+                    .findFirst();
+            first.ifPresent(item -> each.setShortLinkCount(first.get().getShortLinkCount()));
+        });
+        return shortLinkGroupRespDTOList;
     }
 
     @Override
