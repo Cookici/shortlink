@@ -3,30 +3,39 @@ package org.lrh.shortlink.projectcore.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.lrh.shortlink.projectcore.common.config.GotoDomainWhiteListConfiguration;
+import org.lrh.shortlink.projectcore.common.convention.excepiton.ClientException;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ServiceException;
+import org.lrh.shortlink.projectcore.common.enums.VailDateTypeEnum;
 import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
 import org.lrh.shortlink.projectcore.dao.mapper.ShortLinkMapper;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkPageReqDTO;
+import org.lrh.shortlink.projectcore.dto.req.ShortLinkUpdateReqDTO;
 import org.lrh.shortlink.projectcore.dto.resp.ShortLinkCreateRespDTO;
 import org.lrh.shortlink.projectcore.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.projectcore.dto.resp.ShortLinkPageRespDTO;
 import org.lrh.shortlink.projectcore.service.ShortLinkService;
 import org.lrh.shortlink.projectcore.toolkit.HashUtil;
+import org.lrh.shortlink.projectcore.toolkit.LinkUtil;
 import org.redisson.api.RBloomFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @ProjectName: shortlink
@@ -44,6 +53,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final RBloomFilter<String> shortUriCreateCachePenetrationBloomFilter;
 
     private final ShortLinkMapper shortLinkMapper;
+
+    private final GotoDomainWhiteListConfiguration gotoDomainWhiteListConfiguration;
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
@@ -89,6 +100,54 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .build();
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateShortLink(ShortLinkUpdateReqDTO requestParam) {
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getOriginGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                .eq(ShortLinkDO::getDelFlag, 0)
+                .eq(ShortLinkDO::getEnableStatus, 0);
+        ShortLinkDO hasShortLinkDO = baseMapper.selectOne(queryWrapper);
+
+        if (hasShortLinkDO == null) {
+            throw new ServiceException("短链接记录不存在");
+        }
+
+        ShortLinkDO shortLinkDO = ShortLinkDO.builder()
+                .domain(hasShortLinkDO.getDomain())
+                .shortUri(hasShortLinkDO.getShortUri())
+                .clickNum(hasShortLinkDO.getClickNum())
+                .favicon(hasShortLinkDO.getFavicon())
+                .gid(requestParam.getGid())
+                .createdType(hasShortLinkDO.getCreatedType())
+                .originUrl(requestParam.getOriginUrl())
+                .describe(requestParam.getDescribe())
+                .validDateType(requestParam.getValidDateType())
+                .validDate(requestParam.getValidDate())
+                .build();
+
+        if (Objects.equals(hasShortLinkDO.getGid(), requestParam.getGid())) {
+            LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDO::getGid, requestParam.getGid())
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0)
+                    .set(Objects.equals(requestParam.getValidDateType(), VailDateTypeEnum.PERMANENT.getType()), ShortLinkDO::getValidDate, null);
+            baseMapper.update(shortLinkDO, updateWrapper);
+        } else {
+            LambdaUpdateWrapper<ShortLinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getFullShortUrl())
+                    .eq(ShortLinkDO::getGid, hasShortLinkDO.getGid())
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0);
+            baseMapper.delete(updateWrapper);
+            shortLinkDO.setGid(requestParam.getGid());
+            baseMapper.insert(shortLinkDO);
+        }
+
+    }
+
     @Override
     public IPage<ShortLinkPageRespDTO> pageShortLink(ShortLinkPageReqDTO requestParam) {
         LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
@@ -108,7 +167,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .eq("enable_status", 0)
                 .groupBy("gid");
         List<Map<String, Object>> shortLinkDOList = baseMapper.selectMaps(queryWrapper);
-        return BeanUtil.copyToList(shortLinkDOList,ShortLinkGroupCountQueryRespDTO.class);
+        return BeanUtil.copyToList(shortLinkDOList, ShortLinkGroupCountQueryRespDTO.class);
     }
 
     private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
@@ -133,4 +192,20 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         }
         return shortUri;
     }
+
+    private void verificationWhitelist(String originUrl) {
+        Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
+        if (enable == null || !enable) {
+            return;
+        }
+        String domain = LinkUtil.extractDomain(originUrl);
+        if (StrUtil.isBlank(domain)) {
+            throw new ClientException("跳转链接填写错误");
+        }
+        List<String> details = gotoDomainWhiteListConfiguration.getDetails();
+        if (!details.contains(domain)) {
+            throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
+        }
+    }
+
 }

@@ -3,14 +3,12 @@ package org.lrh.shortlink.admin.remote;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.lrh.shortlink.admin.common.convention.result.Result;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
+import org.lrh.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -56,5 +54,13 @@ public interface ShortLinkActualRemoteService {
      */
     @GetMapping("/api/short-link/v1/count")
     Result<List<ShortLinkGroupCountQueryRespDTO>> listGroupShortLinkCount(@RequestParam("requestParam") List<String> requestParam);
+
+    /**
+     * 修改短链接
+     *
+     * @param requestParam 修改短链接请求参数
+     */
+    @PostMapping("/api/short-link/v1/update")
+    void updateShortLink(@RequestBody ShortLinkUpdateReqDTO requestParam);
 
 }
