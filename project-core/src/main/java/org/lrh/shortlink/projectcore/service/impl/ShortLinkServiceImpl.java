@@ -44,9 +44,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
-import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
-import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.LOCK_GOTO_SHORT_LINK_KEY;
+import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.*;
 
 /**
  * @ProjectName: shortlink
@@ -114,7 +114,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             }
             throw new ServiceException(String.format("短链接：%s 生成重复", fullShortUrl));
         }
-        shortUriCreateCachePenetrationBloomFilter.add(shortLinkSuffix);
+        shortUriCreateCachePenetrationBloomFilter.add(fullShortUrl);
         return ShortLinkCreateRespDTO.builder()
                 .fullShortUrl(shortLinkDO.getFullShortUrl())
                 .originUrl(requestParam.getOriginUrl())
@@ -215,6 +215,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 throw new ServiceException("跳转出现错误");
             }
         }
+
+
+        if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
+            return;
+        }
+
+        String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
+        if (StrUtil.isNotBlank(gotoIsNullShortLink)) {
+            return;
+        }
+
+
         RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl));
         lock.lock();
         try {
@@ -227,6 +239,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
 
             if (shortLinkGotoDO == null) {
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.SECONDS);
                 //此处需要进行风控
                 return;
             }
@@ -252,43 +265,42 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     }
 
 
-
-private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
-    int customGenerateCount = 0;
-    String shortUri;
-    while (true) {
-        if (customGenerateCount > 10) {
-            throw new ServiceException("短链接频繁生成，请稍后重试");
+    private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
+        int customGenerateCount = 0;
+        String shortUri;
+        while (true) {
+            if (customGenerateCount > 10) {
+                throw new ServiceException("短链接频繁生成，请稍后重试");
+            }
+            String originUrl = requestParam.getOriginUrl();
+            originUrl += UUID.randomUUID().toString();
+            shortUri = HashUtil.hashToBase62(originUrl);
+            LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                    .eq(ShortLinkDO::getGid, requestParam.getGid())
+                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getDomain() + "/" + shortUri)
+                    .eq(ShortLinkDO::getDelFlag, 0);
+            ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+            if (shortLinkDO == null) {
+                break;
+            }
+            customGenerateCount++;
         }
-        String originUrl = requestParam.getOriginUrl();
-        originUrl += UUID.randomUUID().toString();
-        shortUri = HashUtil.hashToBase62(originUrl);
-        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                .eq(ShortLinkDO::getGid, requestParam.getGid())
-                .eq(ShortLinkDO::getFullShortUrl, requestParam.getDomain() + "/" + shortUri)
-                .eq(ShortLinkDO::getDelFlag, 0);
-        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-        if (shortLinkDO == null) {
-            break;
-        }
-        customGenerateCount++;
+        return shortUri;
     }
-    return shortUri;
-}
 
-private void verificationWhitelist(String originUrl) {
-    Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
-    if (enable == null || !enable) {
-        return;
+    private void verificationWhitelist(String originUrl) {
+        Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
+        if (enable == null || !enable) {
+            return;
+        }
+        String domain = LinkUtil.extractDomain(originUrl);
+        if (StrUtil.isBlank(domain)) {
+            throw new ClientException("跳转链接填写错误");
+        }
+        List<String> details = gotoDomainWhiteListConfiguration.getDetails();
+        if (!details.contains(domain)) {
+            throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
+        }
     }
-    String domain = LinkUtil.extractDomain(originUrl);
-    if (StrUtil.isBlank(domain)) {
-        throw new ClientException("跳转链接填写错误");
-    }
-    List<String> details = gotoDomainWhiteListConfiguration.getDetails();
-    if (!details.contains(domain)) {
-        throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
-    }
-}
 
 }
