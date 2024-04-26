@@ -32,8 +32,11 @@ import org.lrh.shortlink.projectcore.service.ShortLinkService;
 import org.lrh.shortlink.projectcore.toolkit.HashUtil;
 import org.lrh.shortlink.projectcore.toolkit.LinkUtil;
 import org.redisson.api.RBloomFilter;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +44,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
+import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.LOCK_GOTO_SHORT_LINK_KEY;
 
 /**
  * @ProjectName: shortlink
@@ -65,6 +71,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Value("${short-link.domain.default}")
     private String createShortLinkDefaultDomain;
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final RedissonClient redissonClient;
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
@@ -184,68 +194,101 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     @Override
     public void restoreUrl(String shortUri, HttpServletRequest request, HttpServletResponse response) {
+        /*
+          关于协议问题后续处理（http/https）
+          如果创建短链接时：
+          domain字段传入http://nurl.ink
+          在跳转时：
+          由于我们键入的url为nurl.ink/siCwDf
+          因为fullShortUrl = domain + shortUrl
+          查询fullShortUrl时将不会存在，无法获得originUrl去302重定向
+         */
         String serverName = request.getServerName();
         String fullShortUrl = serverName + "/" + shortUri;
-        LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
-                .eq(ShortLinkGotoDO::getFullShortUrl,fullShortUrl);
-        ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+        String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
 
-        if (shortLinkGotoDO == null) {
-            //此处需要进行风控
-            return;
-        }
-        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
-                .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
-                .eq(ShortLinkDO::getDelFlag, 0)
-                .eq(ShortLinkDO::getEnableStatus, 0);
-        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-        if(shortLinkDO != null) {
+        if (StrUtil.isNotBlank(originalLink)) {
             try {
-                response.sendRedirect(shortLinkDO.getOriginUrl());
+                response.sendRedirect(originalLink);
+                return;
             } catch (IOException e) {
                 throw new ServiceException("跳转出现错误");
             }
         }
-
-    }
-
-    private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
-        int customGenerateCount = 0;
-        String shortUri;
-        while (true) {
-            if (customGenerateCount > 10) {
-                throw new ServiceException("短链接频繁生成，请稍后重试");
+        RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl));
+        lock.lock();
+        try {
+            originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
+            if (StrUtil.isNotBlank(originalLink)) {
+                response.sendRedirect(originalLink);
             }
-            String originUrl = requestParam.getOriginUrl();
-            originUrl += UUID.randomUUID().toString();
-            shortUri = HashUtil.hashToBase62(originUrl);
+            LambdaQueryWrapper<ShortLinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortLinkGotoDO.class)
+                    .eq(ShortLinkGotoDO::getFullShortUrl, fullShortUrl);
+            ShortLinkGotoDO shortLinkGotoDO = shortLinkGotoMapper.selectOne(linkGotoQueryWrapper);
+
+            if (shortLinkGotoDO == null) {
+                //此处需要进行风控
+                return;
+            }
             LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
-                    .eq(ShortLinkDO::getGid, requestParam.getGid())
-                    .eq(ShortLinkDO::getFullShortUrl, requestParam.getDomain() + "/" + shortUri)
-                    .eq(ShortLinkDO::getDelFlag, 0);
+                    .eq(ShortLinkDO::getGid, shortLinkGotoDO.getGid())
+                    .eq(ShortLinkDO::getFullShortUrl, fullShortUrl)
+                    .eq(ShortLinkDO::getDelFlag, 0)
+                    .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-            if (shortLinkDO == null) {
-                break;
+            if (shortLinkDO != null) {
+                try {
+                    stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl), shortLinkDO.getOriginUrl());
+                    response.sendRedirect(shortLinkDO.getOriginUrl());
+                } catch (IOException e) {
+                    throw new ServiceException("跳转出现错误");
+                }
             }
-            customGenerateCount++;
+        } catch (ServiceException | IOException e) {
+            throw new ServiceException("跳转出现错误");
+        } finally {
+            lock.unlock();
         }
-        return shortUri;
     }
 
-    private void verificationWhitelist(String originUrl) {
-        Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
-        if (enable == null || !enable) {
-            return;
+
+
+private String generateSuffix(ShortLinkCreateReqDTO requestParam) {
+    int customGenerateCount = 0;
+    String shortUri;
+    while (true) {
+        if (customGenerateCount > 10) {
+            throw new ServiceException("短链接频繁生成，请稍后重试");
         }
-        String domain = LinkUtil.extractDomain(originUrl);
-        if (StrUtil.isBlank(domain)) {
-            throw new ClientException("跳转链接填写错误");
+        String originUrl = requestParam.getOriginUrl();
+        originUrl += UUID.randomUUID().toString();
+        shortUri = HashUtil.hashToBase62(originUrl);
+        LambdaQueryWrapper<ShortLinkDO> queryWrapper = Wrappers.lambdaQuery(ShortLinkDO.class)
+                .eq(ShortLinkDO::getGid, requestParam.getGid())
+                .eq(ShortLinkDO::getFullShortUrl, requestParam.getDomain() + "/" + shortUri)
+                .eq(ShortLinkDO::getDelFlag, 0);
+        ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
+        if (shortLinkDO == null) {
+            break;
         }
-        List<String> details = gotoDomainWhiteListConfiguration.getDetails();
-        if (!details.contains(domain)) {
-            throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
-        }
+        customGenerateCount++;
     }
+    return shortUri;
+}
+
+private void verificationWhitelist(String originUrl) {
+    Boolean enable = gotoDomainWhiteListConfiguration.getEnable();
+    if (enable == null || !enable) {
+        return;
+    }
+    String domain = LinkUtil.extractDomain(originUrl);
+    if (StrUtil.isBlank(domain)) {
+        throw new ClientException("跳转链接填写错误");
+    }
+    List<String> details = gotoDomainWhiteListConfiguration.getDetails();
+    if (!details.contains(domain)) {
+        throw new ClientException("演示环境为避免恶意攻击，请生成以下网站跳转链接：" + gotoDomainWhiteListConfiguration.getNames());
+    }
+}
 
 }
