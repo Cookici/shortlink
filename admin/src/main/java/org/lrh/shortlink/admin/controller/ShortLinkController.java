@@ -38,7 +38,7 @@ public class ShortLinkController {
     /**
      * 分页查询短链接
      */
-    @GetMapping("/api/short-link/v1/page")
+    @GetMapping("/api/short-link/admin/v1/page")
     public Result<Page<ShortLinkPageRespDTO>> pageShortLink(ShortLinkPageReqDTO requestParam){
         return shortLinkActualRemoteService.pageShortLink(requestParam.getGid(), requestParam.getOrderTag(), requestParam.getCurrent(), requestParam.getSize());
     }
@@ -46,7 +46,7 @@ public class ShortLinkController {
     /**
      * 创建短链接
      */
-    @PostMapping("/api/short-link/v1/create")
+    @PostMapping("/api/short-link/admin/v1/create")
     Result<ShortLinkCreateRespDTO> createShortLink(@RequestBody ShortLinkCreateReqDTO requestParam){
         return shortLinkActualRemoteService.createShortLink(requestParam);
     }

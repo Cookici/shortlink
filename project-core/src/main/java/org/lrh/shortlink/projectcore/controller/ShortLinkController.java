@@ -1,6 +1,8 @@
 package org.lrh.shortlink.projectcore.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.lrh.shortlink.projectcore.common.convention.result.Result;
 import org.lrh.shortlink.projectcore.common.convention.result.Results;
@@ -28,6 +30,14 @@ import java.util.List;
 public class ShortLinkController {
 
     private final ShortLinkService shortLinkService;
+
+
+    @GetMapping("/{short-uri}")
+    public void restoreUrl(@PathVariable("short-uri") String shortUri,
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) {
+        shortLinkService.restoreUrl(shortUri,request,response);
+    }
 
     /**
      * 创建短链接
