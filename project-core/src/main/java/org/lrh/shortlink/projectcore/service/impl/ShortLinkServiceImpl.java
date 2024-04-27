@@ -13,6 +13,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.lrh.shortlink.projectcore.common.config.GotoDomainWhiteListConfiguration;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ClientException;
@@ -40,7 +41,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +197,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         return BeanUtil.copyToList(shortLinkDOList, ShortLinkGroupCountQueryRespDTO.class);
     }
 
+    @SneakyThrows
     @Override
     public void restoreUrl(String shortUri, HttpServletRequest request, HttpServletResponse response) {
         /*
@@ -213,31 +214,19 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
 
         if (StrUtil.isNotBlank(originalLink)) {
-            try {
-                response.sendRedirect(originalLink);
-                return;
-            } catch (IOException e) {
-                throw new ServiceException("跳转出现错误");
-            }
+            response.sendRedirect(originalLink);
+            return;
         }
 
 
         if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
-            try {
-                response.sendRedirect("/page/notfound");
-            } catch (IOException e) {
-                throw new ServiceException("跳转出现错误");
-            }
+            response.sendRedirect("/page/notfound");
             return;
         }
 
         String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(gotoIsNullShortLink)) {
-            try {
-                response.sendRedirect("/page/notfound");
-            } catch (IOException e) {
-                throw new ServiceException("跳转出现错误");
-            }
+            response.sendRedirect("/page/notfound");
             return;
         }
 
@@ -255,11 +244,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
             if (shortLinkGotoDO == null) {
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.SECONDS);
-                try {
-                    response.sendRedirect("/page/notfound");
-                } catch (IOException e) {
-                    throw new ServiceException("跳转出现错误");
-                }
+                response.sendRedirect("/page/notfound");
                 //此处需要进行风控
                 return;
             }
@@ -270,25 +255,21 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
             if (shortLinkDO != null) {
-                try {
-                    if (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
-                        stringRedisTemplate.opsForValue().set(
-                                String.format(GOTO_IS_NULL_SHORT_LINK_KEY, shortLinkDO.getFullShortUrl()),
-                                "-", 30, TimeUnit.SECONDS);
-                        response.sendRedirect("/page/notfound");
-                        return;
-                    }
+                if (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
                     stringRedisTemplate.opsForValue().set(
-                            String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
-                            shortLinkDO.getOriginUrl(),
-                            LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()),
-                            TimeUnit.MILLISECONDS);
-                    response.sendRedirect(shortLinkDO.getOriginUrl());
-                } catch (IOException e) {
-                    throw new ServiceException("跳转出现错误");
+                            String.format(GOTO_IS_NULL_SHORT_LINK_KEY, shortLinkDO.getFullShortUrl()),
+                            "-", 30, TimeUnit.SECONDS);
+                    response.sendRedirect("/page/notfound");
+                    return;
                 }
+                stringRedisTemplate.opsForValue().set(
+                        String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                        shortLinkDO.getOriginUrl(),
+                        LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()),
+                        TimeUnit.MILLISECONDS);
+                response.sendRedirect(shortLinkDO.getOriginUrl());
             }
-        } catch (ServiceException | IOException e) {
+        } catch (ServiceException e) {
             throw new ServiceException("跳转出现错误");
         } finally {
             lock.unlock();

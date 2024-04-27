@@ -63,4 +63,13 @@ public interface ShortLinkActualRemoteService {
     @PostMapping("/api/short-link/v1/update")
     void updateShortLink(@RequestBody ShortLinkUpdateReqDTO requestParam);
 
+    /**
+     * 根据 URL 获取标题
+     *
+     * @param url 目标网站地址
+     * @return 网站标题
+     */
+    @GetMapping("/api/short-link/title")
+    Result<String> getTitleByUrl(@RequestParam("url") String url);
+
 }
