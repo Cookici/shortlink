@@ -23,7 +23,7 @@ import java.util.List;
  * @Package: org.lrh.shortlink.admin.service.impl
  * @ClassName: RecycleBinServiceImpl
  * @Author: 63283
- * @Description:
+ * @Description: URL 回收站接口实现层
  * @Date: 2024/4/27 下午9:19
  */
 
