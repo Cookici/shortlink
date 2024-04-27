@@ -41,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -114,7 +115,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             }
             throw new ServiceException(String.format("短链接：%s 生成重复", fullShortUrl));
         }
-        stringRedisTemplate.opsForValue().set(fullShortUrl,
+        stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
                 requestParam.getOriginUrl(),
                 LinkUtil.getLinkCacheValidTime(requestParam.getValidDate()),
                 TimeUnit.MILLISECONDS);
@@ -255,7 +256,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
             if (shortLinkDO != null) {
                 try {
-                    stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl), shortLinkDO.getOriginUrl());
+                    if(shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
+                        stringRedisTemplate.opsForValue().set(
+                                String.format(GOTO_IS_NULL_SHORT_LINK_KEY,shortLinkDO.getFullShortUrl()),
+                                "-", 30, TimeUnit.SECONDS);
+                    }
+                    stringRedisTemplate.opsForValue().set(
+                            String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                            shortLinkDO.getOriginUrl(),
+                            LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()),
+                            TimeUnit.MILLISECONDS);
                     response.sendRedirect(shortLinkDO.getOriginUrl());
                 } catch (IOException e) {
                     throw new ServiceException("跳转出现错误");
