@@ -223,11 +223,21 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
 
         if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
+            try {
+                response.sendRedirect("/page/notfound");
+            } catch (IOException e) {
+                throw new ServiceException("跳转出现错误");
+            }
             return;
         }
 
         String gotoIsNullShortLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl));
         if (StrUtil.isNotBlank(gotoIsNullShortLink)) {
+            try {
+                response.sendRedirect("/page/notfound");
+            } catch (IOException e) {
+                throw new ServiceException("跳转出现错误");
+            }
             return;
         }
 
@@ -245,6 +255,11 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
             if (shortLinkGotoDO == null) {
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl), "-", 30, TimeUnit.SECONDS);
+                try {
+                    response.sendRedirect("/page/notfound");
+                } catch (IOException e) {
+                    throw new ServiceException("跳转出现错误");
+                }
                 //此处需要进行风控
                 return;
             }
@@ -256,10 +271,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
             if (shortLinkDO != null) {
                 try {
-                    if(shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
+                    if (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
                         stringRedisTemplate.opsForValue().set(
-                                String.format(GOTO_IS_NULL_SHORT_LINK_KEY,shortLinkDO.getFullShortUrl()),
+                                String.format(GOTO_IS_NULL_SHORT_LINK_KEY, shortLinkDO.getFullShortUrl()),
                                 "-", 30, TimeUnit.SECONDS);
+                        response.sendRedirect("/page/notfound");
+                        return;
                     }
                     stringRedisTemplate.opsForValue().set(
                             String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
