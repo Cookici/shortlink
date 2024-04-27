@@ -15,6 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.lrh.shortlink.projectcore.common.config.GotoDomainWhiteListConfiguration;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ClientException;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ServiceException;
@@ -41,6 +44,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +104,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                 .totalUip(0)
                 .delTime(0L)
                 .fullShortUrl(fullShortUrl)
-                .favicon("")
+                .favicon(getFavicon(requestParam.getOriginUrl()))
                 .build();
         ShortLinkGotoDO shortLinkGotoDO = ShortLinkGotoDO.builder()
                 .fullShortUrl(fullShortUrl)
@@ -218,7 +223,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             return;
         }
 
-
         if (!shortUriCreateCachePenetrationBloomFilter.contains(fullShortUrl)) {
             response.sendRedirect("/page/notfound");
             return;
@@ -229,7 +233,6 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             response.sendRedirect("/page/notfound");
             return;
         }
-
 
         RLock lock = redissonClient.getLock(String.format(LOCK_GOTO_SHORT_LINK_KEY, fullShortUrl));
         lock.lock();
@@ -254,21 +257,20 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                     .eq(ShortLinkDO::getDelFlag, 0)
                     .eq(ShortLinkDO::getEnableStatus, 0);
             ShortLinkDO shortLinkDO = baseMapper.selectOne(queryWrapper);
-            if (shortLinkDO != null) {
-                if (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date())) {
-                    stringRedisTemplate.opsForValue().set(
-                            String.format(GOTO_IS_NULL_SHORT_LINK_KEY, shortLinkDO.getFullShortUrl()),
-                            "-", 30, TimeUnit.SECONDS);
-                    response.sendRedirect("/page/notfound");
-                    return;
-                }
+
+            if (shortLinkDO == null || (shortLinkDO.getValidDate() != null && shortLinkDO.getValidDate().before(new Date()))) {
                 stringRedisTemplate.opsForValue().set(
-                        String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
-                        shortLinkDO.getOriginUrl(),
-                        LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()),
-                        TimeUnit.MILLISECONDS);
-                response.sendRedirect(shortLinkDO.getOriginUrl());
+                        String.format(GOTO_IS_NULL_SHORT_LINK_KEY, fullShortUrl),
+                        "-", 30, TimeUnit.SECONDS);
+                response.sendRedirect("/page/notfound");
+                return;
             }
+            stringRedisTemplate.opsForValue().set(
+                    String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),
+                    shortLinkDO.getOriginUrl(),
+                    LinkUtil.getLinkCacheValidTime(shortLinkDO.getValidDate()),
+                    TimeUnit.MILLISECONDS);
+            response.sendRedirect(shortLinkDO.getOriginUrl());
         } catch (ServiceException e) {
             throw new ServiceException("跳转出现错误");
         } finally {
@@ -298,6 +300,28 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             customGenerateCount++;
         }
         return shortUri;
+    }
+
+    @SneakyThrows
+    private String getFavicon(String url) {
+        HttpURLConnection connection = null;
+        Element faviconLink = null;
+        try {
+            URL targetUrl = new URL(url);
+            connection = (HttpURLConnection) targetUrl.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                Document document = Jsoup.connect(url).get();
+                faviconLink = document.select("link[rel~=(?i)^(shortcut )?icon]").first();
+            }
+            return faviconLink != null ? faviconLink.attr("abs:href") : null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
     private void verificationWhitelist(String originUrl) {

@@ -2,6 +2,7 @@ package org.lrh.shortlink.admin.remote;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.lrh.shortlink.admin.common.convention.result.Result;
+import org.lrh.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
@@ -71,5 +72,14 @@ public interface ShortLinkActualRemoteService {
      */
     @GetMapping("/api/short-link/title")
     Result<String> getTitleByUrl(@RequestParam("url") String url);
+
+    /**
+     * 短链接移至回收站
+     *
+     * @param requestParam 请求参数
+     * @return void
+     */
+    @PostMapping("/api/short-link/v1/recycle-bin/save")
+    Result<Void> saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam);
 
 }
