@@ -2,9 +2,7 @@ package org.lrh.shortlink.admin.remote;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.lrh.shortlink.admin.common.convention.result.Result;
-import org.lrh.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
-import org.lrh.shortlink.admin.remote.dto.req.ShortLinkCreateReqDTO;
-import org.lrh.shortlink.admin.remote.dto.req.ShortLinkUpdateReqDTO;
+import org.lrh.shortlink.admin.remote.dto.req.*;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
@@ -98,5 +96,23 @@ public interface ShortLinkActualRemoteService {
     Result<Page<ShortLinkPageRespDTO>> pageRecycleBinShortLink(@RequestParam("gidList") List<String> gidList,
                                                                @RequestParam("current") Long current,
                                                                @RequestParam("size") Long size);
+
+
+    /**
+     * 恢复短链接
+     * @param requestParam 请求参数
+     * @return void
+     */
+    @PostMapping("/api/short-link/v1/recycle-bin/recover")
+    Result<Void> recoverRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam);
+
+
+    /**
+     * 删除回收站短链接
+     * @param requestParam 请求参数
+     * @return void
+     */
+    @PostMapping("/api/short-link/v1/recycle-bin/remove")
+    Result<Void> removeRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam);
 
 }

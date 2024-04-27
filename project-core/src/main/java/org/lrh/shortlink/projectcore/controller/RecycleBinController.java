@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.RequiredArgsConstructor;
 import org.lrh.shortlink.projectcore.common.convention.result.Result;
 import org.lrh.shortlink.projectcore.common.convention.result.Results;
+import org.lrh.shortlink.projectcore.dto.req.RecycleBinRecoverReqDTO;
+import org.lrh.shortlink.projectcore.dto.req.RecycleBinRemoveReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.RecycleBinSaveReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkRecycleBinPageReqDTO;
 import org.lrh.shortlink.projectcore.dto.resp.ShortLinkPageRespDTO;
@@ -46,6 +48,29 @@ public class RecycleBinController {
     public Result<IPage<ShortLinkPageRespDTO>> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam){
         return Results.success(recycleBinService.pageRecycleBinShortLink(requestParam));
     }
+
+    /**
+     * 恢复短链接
+     * @param requestParam 请求参数
+     * @return void
+     */
+    @PostMapping("/api/short-link/v1/recycle-bin/recover")
+    public Result<Void> recoverRecycleBin(@RequestBody RecycleBinRecoverReqDTO requestParam){
+        recycleBinService.recoverRecycleBin(requestParam);
+        return Results.success();
+    }
+
+    /**
+     * 删除回收站短链接
+     * @param requestParam 请求参数
+     * @return void
+     */
+    @PostMapping("/api/short-link/v1/recycle-bin/remove")
+    public Result<Void> removeRecycleBin(@RequestBody RecycleBinRemoveReqDTO requestParam){
+        recycleBinService.removeRecycleBin(requestParam);
+        return Results.success();
+    }
+
 
 
 }
