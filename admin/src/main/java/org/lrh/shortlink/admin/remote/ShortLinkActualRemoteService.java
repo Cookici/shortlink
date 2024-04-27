@@ -9,7 +9,10 @@ import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkCreateRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkGroupCountQueryRespDTO;
 import org.lrh.shortlink.admin.remote.dto.resp.ShortLinkPageRespDTO;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -81,5 +84,19 @@ public interface ShortLinkActualRemoteService {
      */
     @PostMapping("/api/short-link/v1/recycle-bin/save")
     Result<Void> saveRecycleBin(@RequestBody RecycleBinSaveReqDTO requestParam);
+
+
+    /**
+     * 分页查询回收站短链接
+     *
+     * @param gidList 分组标识集合
+     * @param current 当前页
+     * @param size    当前数据多少
+     * @return 查询短链接响应
+     */
+    @GetMapping("/api/short-link/v1/recycle-bin/page")
+    Result<Page<ShortLinkPageRespDTO>> pageRecycleBinShortLink(@RequestParam("gidList") List<String> gidList,
+                                                               @RequestParam("current") Long current,
+                                                               @RequestParam("size") Long size);
 
 }

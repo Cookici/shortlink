@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.lrh.shortlink.projectcore.dao.mapper.ShortLinkMapper">
+
+    <!-- pageRecycleBinShortLink() -->
+    <select id="pageRecycleBinShortLink"
+            parameterType="org.lrh.shortlink.projectcore.dto.req.ShortLinkRecycleBinPageReqDTO"
+            resultType="org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO">
+        SELECT t.* FROM t_link t WHERE t.gid IN
+        <foreach item="item" index="index" collection="gidList" open="(" separator="," close=")"> #{item} </foreach>
+        AND t.enable_status = 1 AND t.del_flag = 0 ORDER by t.update_time
+    </select>
+
+</mapper>

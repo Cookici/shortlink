@@ -1,7 +1,9 @@
 package org.lrh.shortlink.projectcore.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
+import org.lrh.shortlink.projectcore.dto.req.ShortLinkRecycleBinPageReqDTO;
 
 /**
  * @ProjectName: shortlink
@@ -14,4 +16,10 @@ import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
 
 public interface ShortLinkMapper extends BaseMapper<ShortLinkDO> {
 
+    /**
+     * 分页统计回收站短链接
+     * @param requestParam 请求参数
+     * @return 分页数据
+     */
+    IPage<ShortLinkDO> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam);
 }

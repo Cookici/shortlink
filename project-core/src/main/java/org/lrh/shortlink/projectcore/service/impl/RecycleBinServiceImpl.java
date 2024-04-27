@@ -1,12 +1,16 @@
 package org.lrh.shortlink.projectcore.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
 import org.lrh.shortlink.projectcore.dao.mapper.ShortLinkMapper;
 import org.lrh.shortlink.projectcore.dto.req.RecycleBinSaveReqDTO;
+import org.lrh.shortlink.projectcore.dto.req.ShortLinkRecycleBinPageReqDTO;
+import org.lrh.shortlink.projectcore.dto.resp.ShortLinkPageRespDTO;
 import org.lrh.shortlink.projectcore.service.RecycleBinService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,16 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
                 String.format(GOTO_SHORT_LINK_KEY,requestParam.getFullShortUrl()));
 
 
+    }
+
+    @Override
+    public IPage<ShortLinkPageRespDTO> pageRecycleBinShortLink(ShortLinkRecycleBinPageReqDTO requestParam){
+        IPage<ShortLinkDO> resultPage = baseMapper.pageRecycleBinShortLink(requestParam);
+        return resultPage.convert(each -> {
+            ShortLinkPageRespDTO result = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
+            result.setDomain(result.getDomain());
+            return result;
+        });
     }
 
 }
