@@ -29,14 +29,8 @@ import org.lrh.shortlink.projectcore.common.config.GotoDomainWhiteListConfigurat
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ClientException;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ServiceException;
 import org.lrh.shortlink.projectcore.common.enums.VailDateTypeEnum;
-import org.lrh.shortlink.projectcore.dao.entity.LinkAccessStatsDO;
-import org.lrh.shortlink.projectcore.dao.entity.LinkLocaleStatsDO;
-import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
-import org.lrh.shortlink.projectcore.dao.entity.ShortLinkGotoDO;
-import org.lrh.shortlink.projectcore.dao.mapper.LinkAccessStatsMapper;
-import org.lrh.shortlink.projectcore.dao.mapper.LinkLocaleStatsMapper;
-import org.lrh.shortlink.projectcore.dao.mapper.ShortLinkGotoMapper;
-import org.lrh.shortlink.projectcore.dao.mapper.ShortLinkMapper;
+import org.lrh.shortlink.projectcore.dao.entity.*;
+import org.lrh.shortlink.projectcore.dao.mapper.*;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkPageReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkUpdateReqDTO;
@@ -97,9 +91,12 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     private final LinkLocaleStatsMapper linkLocaleStatsMapper;
 
+    private final LinkOsStatsMapper linkOsStatsMapper;
+
     private final StringRedisTemplate stringRedisTemplate;
 
     private final RedissonClient redissonClient;
+
 
     @Override
     public ShortLinkCreateRespDTO createShortLink(ShortLinkCreateReqDTO requestParam) {
@@ -388,7 +385,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
             LinkLocaleStatsDO linkLocaleStatsDO;
             if (StrUtil.isNotBlank(infocode) && StrUtil.equals(infocode, "10000")) {
                 String province = localeResultStrObject.getString("province");
-                boolean unknownFlag = StrUtil.equals(province,"[]");
+                boolean unknownFlag = StrUtil.equals(province, "[]");
                 linkLocaleStatsDO = LinkLocaleStatsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
@@ -399,7 +396,18 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .province(unknownFlag ? "未知" : province)
                         .date(new Date())
                         .build();
+
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
+
+                LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
+                        .fullShortUrl(fullShortUrl)
+                        .gid(gid)
+                        .cnt(1)
+                        .date(new Date())
+                        .os(LinkUtil.getOs(request))
+                        .build();
+                linkOsStatsMapper.shortLinkOsStats(linkOsStatsDO);
+
             }
         } catch (Exception e) {
             log.error("短链接访问统计异常:{}", e.getMessage());
