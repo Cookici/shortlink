@@ -96,6 +96,10 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     private final LinkBrowserStatsMapper linkBrowserStatsMapper;
 
+    private final LinkDeviceStatsMapper linkDeviceStatsMapper;
+
+    private final LinkNetworkStatsMapper linkNetworkStatsMapper;
+
     private final LinkAccessLogsMapper linkAccessLogsMapper;
 
     private final StringRedisTemplate stringRedisTemplate;
@@ -425,12 +429,36 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
                 linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
 
+
+                String device = LinkUtil.getDevice(request);
+                LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
+                        .fullShortUrl(fullShortUrl)
+                        .gid(gid)
+                        .cnt(1)
+                        .date(new Date())
+                        .device(device)
+                        .build();
+                linkDeviceStatsMapper.shortLinkDeviceState(linkDeviceStatsDO);
+
+                String network = LinkUtil.getNetwork(request);
+                LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
+                        .fullShortUrl(fullShortUrl)
+                        .gid(gid)
+                        .cnt(1)
+                        .date(new Date())
+                        .network(network)
+                        .build();
+                linkNetworkStatsMapper.shortLinkNetworkState(linkNetworkStatsDO);
+
                 LinkAccessLogsDO linkAccessLogsDO = LinkAccessLogsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .user(uv.get())
                         .gid(gid)
                         .ip(remoteAddr)
                         .browser(browser)
+                        .device(device)
+                        .network(network)
+                        .locale(unknownFlag ? "未知" : province)
                         .os(os)
                         .build();
 
