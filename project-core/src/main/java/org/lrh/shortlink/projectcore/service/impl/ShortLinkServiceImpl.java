@@ -54,6 +54,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.lrh.shortlink.projectcore.common.constant.CommonConstant.HTTP_PREFIX;
 import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.*;
@@ -94,6 +95,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private final LinkOsStatsMapper linkOsStatsMapper;
 
     private final LinkBrowserStatsMapper linkBrowserStatsMapper;
+
+    private final LinkAccessLogsMapper linkAccessLogsMapper;
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -330,15 +333,16 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
     private void shortLinkStats(String fullShortUrl, String gid, HttpServletRequest request, HttpServletResponse response) {
         AtomicBoolean uvFirstFlag = new AtomicBoolean();
         Cookie[] cookies = request.getCookies();
+        AtomicReference<String> uv = new AtomicReference<>();
         try {
             Runnable addResponseCookieTask = () -> {
-                String uv = UUID.fastUUID().toString();
-                Cookie uvCookie = new Cookie("uv", uv);
+                uv.set(UUID.fastUUID().toString());
+                Cookie uvCookie = new Cookie("uv", uv.get());
                 uvCookie.setMaxAge(60 * 60 * 24 * 30);
                 uvCookie.setPath(StrUtil.sub(fullShortUrl, fullShortUrl.indexOf("/"), fullShortUrl.length()));
                 response.addCookie(uvCookie);
                 uvFirstFlag.set(Boolean.TRUE);
-                stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, uv);
+                stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, uv.get());
             };
             if (ArrayUtil.isNotEmpty(cookies)) {
                 Arrays.stream(cookies)
@@ -346,6 +350,7 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .findFirst()
                         .map(Cookie::getValue)
                         .ifPresentOrElse(cookie -> {
+                            uv.set(cookie);
                             Long added = stringRedisTemplate.opsForSet().add("short-link:stats:uv:" + fullShortUrl, cookie);
                             uvFirstFlag.set(added != null && added > 0L);
                         }, addResponseCookieTask);
@@ -400,25 +405,37 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
 
                 linkLocaleStatsMapper.shortLinkLocaleStats(linkLocaleStatsDO);
-
+                String os = LinkUtil.getOs(request);
                 LinkOsStatsDO linkOsStatsDO = LinkOsStatsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
                         .cnt(1)
                         .date(new Date())
-                        .os(LinkUtil.getOs(request))
+                        .os(os)
                         .build();
                 linkOsStatsMapper.shortLinkOsStats(linkOsStatsDO);
 
+                String browser = LinkUtil.getBrowser(request);
                 LinkBrowserStatsDO linkBrowserStatsDO = LinkBrowserStatsDO.builder()
                         .fullShortUrl(fullShortUrl)
                         .gid(gid)
                         .cnt(1)
                         .date(new Date())
-                        .browser(LinkUtil.getBrowser(request))
+                        .browser(browser)
+                        .build();
+                linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
+
+                LinkAccessLogsDO linkAccessLogsDO = LinkAccessLogsDO.builder()
+                        .fullShortUrl(fullShortUrl)
+                        .user(uv.get())
+                        .gid(gid)
+                        .ip(remoteAddr)
+                        .browser(browser)
+                        .os(os)
                         .build();
 
-                linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
+                linkAccessLogsMapper.insert(linkAccessLogsDO);
+
             }
         } catch (Exception e) {
             log.error("短链接访问统计异常:{}", e.getMessage());
