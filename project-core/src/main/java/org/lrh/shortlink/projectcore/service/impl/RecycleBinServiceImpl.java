@@ -17,6 +17,7 @@ import org.lrh.shortlink.projectcore.service.RecycleBinService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import static org.lrh.shortlink.projectcore.common.constant.CommonConstant.HTTP_PREFIX;
 import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.GOTO_IS_NULL_SHORT_LINK_KEY;
 import static org.lrh.shortlink.projectcore.common.constant.RedisKeyConstant.GOTO_SHORT_LINK_KEY;
 
@@ -54,7 +55,7 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLin
         IPage<ShortLinkDO> resultPage = baseMapper.pageRecycleBinShortLink(requestParam);
         return resultPage.convert(each -> {
             ShortLinkPageRespDTO result = BeanUtil.toBean(each, ShortLinkPageRespDTO.class);
-            result.setDomain(result.getDomain());
+            result.setDomain(HTTP_PREFIX+ result.getDomain());
             return result;
         });
     }
