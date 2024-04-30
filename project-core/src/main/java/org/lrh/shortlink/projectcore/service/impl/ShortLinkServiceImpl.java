@@ -93,6 +93,8 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
 
     private final LinkOsStatsMapper linkOsStatsMapper;
 
+    private final LinkBrowserStatsMapper linkBrowserStatsMapper;
+
     private final StringRedisTemplate stringRedisTemplate;
 
     private final RedissonClient redissonClient;
@@ -408,6 +410,15 @@ public class ShortLinkServiceImpl extends ServiceImpl<ShortLinkMapper, ShortLink
                         .build();
                 linkOsStatsMapper.shortLinkOsStats(linkOsStatsDO);
 
+                LinkBrowserStatsDO linkBrowserStatsDO = LinkBrowserStatsDO.builder()
+                        .fullShortUrl(fullShortUrl)
+                        .gid(gid)
+                        .cnt(1)
+                        .date(new Date())
+                        .browser(LinkUtil.getBrowser(request))
+                        .build();
+
+                linkBrowserStatsMapper.shortLinkBrowserState(linkBrowserStatsDO);
             }
         } catch (Exception e) {
             log.error("短链接访问统计异常:{}", e.getMessage());
