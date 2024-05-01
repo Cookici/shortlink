@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO;
+import org.lrh.shortlink.projectcore.dto.biz.ShortLinkStatsRecordDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkCreateReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkPageReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkUpdateReqDTO;
@@ -60,4 +61,12 @@ public interface ShortLinkService  extends IService<ShortLinkDO> {
      * @param response HTTP响应
      */
     void restoreUrl(String shortUri, HttpServletRequest request, HttpServletResponse response);
+
+    /**
+     * 短链接统计
+     *
+     * @param shortLinkStatsRecord 短链接统计实体参数
+     */
+    void shortLinkStats(ShortLinkStatsRecordDTO shortLinkStatsRecord);
+
 }
