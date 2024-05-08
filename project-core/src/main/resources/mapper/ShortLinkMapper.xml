@@ -5,7 +5,7 @@
 
 <mapper namespace="org.lrh.shortlink.projectcore.dao.mapper.ShortLinkMapper">
 
-    <!-- pageRecycleBinShortLink() -->
+    <!-- pageRecycleBinShortLink -->
     <select id="pageRecycleBinShortLink"
             parameterType="org.lrh.shortlink.projectcore.dto.req.ShortLinkRecycleBinPageReqDTO"
             resultType="org.lrh.shortlink.projectcore.dao.entity.ShortLinkDO">
