@@ -1,4 +1,4 @@
-package org.lrh.shortlink.projectcore.common.config;
+package org.lrh.shortlink.admin.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.projectcore.common.config
+ * @Package: org.lrh.shortlink.admin.common.config
  * @ClassName: DataBaseConfiguration
  * @Author: 63283
  * @Description: 数据库持久层配置类

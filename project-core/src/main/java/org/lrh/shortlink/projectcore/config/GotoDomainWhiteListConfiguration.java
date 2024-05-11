@@ -1,4 +1,4 @@
-package org.lrh.shortlink.projectcore.common.config;
+package org.lrh.shortlink.projectcore.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

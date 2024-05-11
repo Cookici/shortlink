@@ -1,4 +1,4 @@
-package org.lrh.shortlink.projectcore.common.config;
+package org.lrh.shortlink.admin.config;
 
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
@@ -7,11 +7,11 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @ProjectName: shortlink
- * @Package: org.lrh.shortlink.projectcore.common.config
+ * @Package: org.lrh.shortlink.admin.common.config
  * @ClassName: RBloomFilterConfiguration
  * @Author: 63283
  * @Description: 布隆过滤器配置
- * @Date: 2024/3/25 10:15
+ * @Date: 2024/3/20 17:01
  */
 
 @Configuration(value = "rBloomFilterConfigurationByAdmin")

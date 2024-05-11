@@ -1,4 +1,4 @@
-package org.lrh.shortlink.admin.common.config;
+package org.lrh.shortlink.admin.config;
 
 import org.lrh.shortlink.admin.common.biz.user.UserTransmitFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
