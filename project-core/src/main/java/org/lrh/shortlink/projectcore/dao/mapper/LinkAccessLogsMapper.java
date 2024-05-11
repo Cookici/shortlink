@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.lrh.shortlink.projectcore.dao.entity.LinkAccessLogsDO;
 import org.lrh.shortlink.projectcore.dao.entity.LinkAccessStatsDO;
+import org.lrh.shortlink.projectcore.dto.req.ShortLinkGroupStatsReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkStatsReqDTO;
 
 import java.util.HashMap;
@@ -21,6 +22,8 @@ import java.util.Map;
  */
 
 public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
+
+
     /**
      * 根据短链接获取指定日期内高频访问IP数据
      * @param requestParam 请求参数
@@ -44,6 +47,27 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             "    count DESC " +
             "LIMIT 5;")
     List<HashMap<String, Object>> listTopIpByShortLink(@Param("param") ShortLinkStatsReqDTO requestParam);
+
+    /**
+     * 根据分组获取指定日期内高频访问IP数据
+     */
+    @Select("SELECT " +
+            "    tlal.ip, " +
+            "    COUNT(tlal.ip) AS count " +
+            "FROM " +
+            "    t_link tl INNER JOIN " +
+            "    t_link_access_logs tlal ON tl.full_short_url = tlal.full_short_url " +
+            "WHERE " +
+            "    tl.gid = #{param.gid} " +
+            "    AND tl.del_flag = '0' " +
+            "    AND tl.enable_status = '0' " +
+            "    AND tlal.create_time BETWEEN #{param.startDate} and #{param.endDate} " +
+            "GROUP BY " +
+            "    tl.gid, tlal.ip " +
+            "ORDER BY " +
+            "    count DESC " +
+            "LIMIT 5;")
+    List<HashMap<String, Object>> listTopIpByGroup(@Param("param") ShortLinkGroupStatsReqDTO requestParam);
 
 
     /**
@@ -127,5 +151,25 @@ public interface LinkAccessLogsMapper extends BaseMapper<LinkAccessLogsDO> {
             @Param("endDate") String endDate,
             @Param("userAccessLogsList") List<String> userAccessLogsList
     );
+
+    /**
+     * 根据分组获取指定日期内PV、UV、UIP数据
+     */
+    @Select("SELECT " +
+            "    COUNT(tlal.user) AS pv, " +
+            "    COUNT(DISTINCT tlal.user) AS uv, " +
+            "    COUNT(DISTINCT tlal.ip) AS uip " +
+            "FROM " +
+            "    t_link tl INNER JOIN " +
+            "    t_link_access_logs tlal ON tl.full_short_url = tlal.full_short_url " +
+            "WHERE " +
+            "    tl.gid = #{param.gid} " +
+            "    AND tl.del_flag = '0' " +
+            "    AND tl.enable_status = '0' " +
+            "    AND tlal.create_time BETWEEN #{param.startDate} and #{param.endDate} " +
+            "GROUP BY " +
+            "    tl.gid;")
+    LinkAccessStatsDO findPvUvUidStatsByGroup(@Param("param") ShortLinkGroupStatsReqDTO requestParam);
+
 
 }
