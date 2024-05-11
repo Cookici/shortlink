@@ -27,7 +27,7 @@ import java.util.Optional;
  * @Description: 全局异常处理器
  * @Date: 2024/3/18 15:25
  */
-@Component
+@Component("globalExceptionHandlerByAdmin")
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
