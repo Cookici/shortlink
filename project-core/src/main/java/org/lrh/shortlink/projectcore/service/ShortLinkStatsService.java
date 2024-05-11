@@ -1,6 +1,7 @@
 package org.lrh.shortlink.projectcore.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.lrh.shortlink.projectcore.dao.entity.ShortLinkGroupStatsAccessRecordReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkGroupStatsReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkStatsAccessRecordReqDTO;
 import org.lrh.shortlink.projectcore.dto.req.ShortLinkStatsReqDTO;
@@ -44,4 +45,11 @@ public interface ShortLinkStatsService {
     ShortLinkStatsRespDTO groupShortLinkStats(ShortLinkGroupStatsReqDTO requestParam);
 
 
+    /**
+     * 访问分组短链接指定时间内访问记录监控数据
+     *
+     * @param requestParam 获取分组短链接监控访问记录数据入参
+     * @return 分组访问记录监控数据
+     */
+    IPage<ShortLinkStatsAccessRecordRespDTO> groupShortLinkStatsAccessRecord(ShortLinkGroupStatsAccessRecordReqDTO requestParam);
 }
