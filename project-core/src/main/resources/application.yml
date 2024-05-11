@@ -1,2 +1,44 @@
 server:
   port: 8001
+
+spring:
+  application:
+    name: short-link-project
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:shardingsphere-config-${database.env:dev}.yml
+  data:
+    redis:
+      host: common-redis-dev.magestack.cn
+      port: 19389
+      password: Sm9sVXBOYJjI030b5tz0trjpzvZzRhtZmEbv0uOImcD1wEDOPfeaqNU4PxHob/Wp
+  mvc:
+    view:
+      prefix: /templates/
+      suffix: .html
+  cloud:
+    nacos:
+      discovery:
+        server-addr: common-nacos-dev.magestack.cn:8848
+
+
+short-link:
+  domain:
+    default: nurl.ink:8001
+  stats:
+    locale:
+      amap-key: f7d18a094d44058e32e4cd336eeecad9
+  goto-domain:
+    white-list:
+      enable: true
+      names: 'nurl.ink,知乎,掘金,博客园'
+      details:
+        - 106.53.50.195
+        - zhihu.com
+        - juejin.cn
+        - cnblogs.com
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml
