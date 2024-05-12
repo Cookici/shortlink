@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Description: URL 标题控制层
  * @Date: 2024/4/27 下午2:13
  */
-@RestController
+@RestController(value = "urlTitleControllerByAdmin")
 @RequiredArgsConstructor
 public class UrlTitleController {
 
