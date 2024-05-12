@@ -16,6 +16,8 @@ spring:
     nacos:
       discovery:
         server-addr: common-nacos-dev.magestack.cn:8848
+  main:
+    allow-bean-definition-overriding: true
 
 short-link:
   group:

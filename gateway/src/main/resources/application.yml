@@ -1,2 +1,19 @@
 server:
   port: 8000
+spring:
+  application:
+    name: short-link-gateway
+  profiles:
+    active: aggregation
+    # active: dev
+  data:
+    redis:
+      host: common-redis-dev.magestack.cn
+      port: 19389
+      password: Sm9sVXBOYJjI030b5tz0trjpzvZzRhtZmEbv0uOImcD1wEDOPfeaqNU4PxHob/Wp
+  cloud:
+    nacos:
+      discovery:
+        server-addr: common-nacos-dev.magestack.cn:8848
+  main:
+    allow-bean-definition-overriding: true
