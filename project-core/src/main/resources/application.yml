@@ -20,11 +20,12 @@ spring:
     nacos:
       discovery:
         server-addr: common-nacos-dev.magestack.cn:8848
-
+  main:
+    allow-bean-definition-overriding: true
 
 short-link:
   domain:
-    default: nurl.ink:8001
+    default: nurl.ink:8003
   stats:
     locale:
       amap-key: f7d18a094d44058e32e4cd336eeecad9

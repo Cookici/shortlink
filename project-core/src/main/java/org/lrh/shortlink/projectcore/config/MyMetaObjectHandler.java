@@ -2,7 +2,6 @@ package org.lrh.shortlink.projectcore.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -16,7 +15,6 @@ import java.util.Date;
  * @Date: 2024/3/18 16:53
  */
 
-@Primary
 @Component
 public class MyMetaObjectHandler implements MetaObjectHandler {
 

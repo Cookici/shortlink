@@ -3,6 +3,7 @@ package org.lrh.shortlink.projectcore;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
  * @ProjectName: shortlink
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @Date: 2024/3/18 14:09
  */
 @SpringBootApplication
+@EnableDiscoveryClient
 @MapperScan("org.lrh.shortlink.projectcore.dao.mapper")
 public class ShortLinkProjectCoreApplication {
     public static void main(String[] args) {

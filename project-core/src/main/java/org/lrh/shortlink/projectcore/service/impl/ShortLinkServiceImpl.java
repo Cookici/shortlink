@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.lrh.shortlink.projectcore.common.config.GotoDomainWhiteListConfiguration;
+import org.lrh.shortlink.projectcore.config.GotoDomainWhiteListConfiguration;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ClientException;
 import org.lrh.shortlink.projectcore.common.convention.excepiton.ServiceException;
 import org.lrh.shortlink.projectcore.common.enums.VailDateTypeEnum;
